@@ -7,6 +7,7 @@ const http = require("http");
 const authRouter = require("./routes/authRouter");
 const adminRouter = require("./routes/adminRouter");
 const commonRoleRouter = require("./routes/commonRoleRouter");
+const bcrypt = require('bcrypt');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -34,8 +35,22 @@ app.use(morgan("tiny")); // Logging
 
 app.use(express.json());
 
+async function hashPassword(password) {
+  const saltRounds = 12; // You can adjust the salt rounds as needed
+  try {
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    return hashedPassword;
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    throw error;
+  }
+}
+
+
 // Define a welcome route
-app.get("/", (req, res) => {
+app.get("/", async(req, res) => {
+  const password = await hashPassword('Jude1998');
+  console.log(password);
   res.json({ message: "Welcome" });
 });
 
