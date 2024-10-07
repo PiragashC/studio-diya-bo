@@ -233,11 +233,11 @@ const createOrder = async (req, res) => {
 
     // Determine order status based on paidAmount and totalAmount
     let status;
-    if (paid === 0) {
+    if (paid == 0) {
       status = "Unpaid";
     } else if (paid < totalAmount) {
       status = "Not Fully Paid";
-    } else if (paid === totalAmount) {
+    } else if (paid == totalAmount) {
       status = "Paid";
     } else if (paid > totalAmount) {
       status = "Overpaid - Balance Due";
