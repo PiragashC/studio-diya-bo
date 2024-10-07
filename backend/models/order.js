@@ -16,6 +16,7 @@ const orderSchema = new Schema(
     ],
     total: { type: Number, required: true },
     paidAmount: { type: Number, required: true },
+    orderDate: { type: String, required: true },
     status: {
       type: String,
       required: true,

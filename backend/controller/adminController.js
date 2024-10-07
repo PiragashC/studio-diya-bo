@@ -193,9 +193,9 @@ const createOrder = async (req, res) => {
       return res.status(403).json({ error: "You are not authorized" });
     }
 
-    const { customerDetails, orderDetails, paidAmount } = req.body;
+    const { customerDetails, orderDetails, paidAmount, orderDate } = req.body;
 
-    if (!customerDetails || !orderDetails) {
+    if (!customerDetails || !orderDetails || !orderDate) {
       return res.status(400).json({ error: "Order details are required!" });
     }
 
