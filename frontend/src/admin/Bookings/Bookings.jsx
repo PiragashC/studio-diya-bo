@@ -22,6 +22,7 @@ import "jspdf-autotable";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import { Toast } from "primereact/toast";
+import { Dropdown } from "primereact/dropdown";
 
 const Bookings = () => {
   const toast = useRef(null);
@@ -38,7 +39,8 @@ const Bookings = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [rowPerPage, setRowsPerPage] = useState([5]);
-  const [paidAmount, setPaidAmount] = useState(null);
+  const [orderDate, setOrderDate] = useState(null);
+  const [status, setStatus] = useState(null);
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token);
   const [changeStatusLoading, setChangeStatusLoading] = useState(false);
@@ -62,14 +64,15 @@ const Bookings = () => {
     const pageWidth =
       doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
     const logoX = (pageWidth - logoWidth) / 2;
-    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const pageHeight =
+      doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
 
     // *** Add border box for the entire page ***
-  const margin = 10; // Set margin for the border
-  doc.rect(margin, margin, pageWidth - 2 * margin, pageHeight - 2 * margin);
+    const margin = 10; // Set margin for the border
+    doc.rect(margin, margin, pageWidth - 2 * margin, pageHeight - 2 * margin);
 
     // Add logo to the PDF
-    doc.addImage(logoBase64, "PNG", logoX, 0, logoWidth, 80, undefined, 'FAST');
+    doc.addImage(logoBase64, "PNG", logoX, 0, logoWidth, 80, undefined, "FAST");
 
     // Invoice status based on selectedBooking.status
     let statusText = "";
@@ -212,12 +215,11 @@ const Bookings = () => {
     }
 
     // *** Footer message - Centered, Bold, Larger Font ***
-  const footerMessage = "Thank You. Come Again!";
-  doc.setFontSize(16); // Increase font size
-  doc.setFont("helvetica", "bold"); // Make it bold
-  const footerMessageWidth = doc.getTextWidth(footerMessage); // Get text width
-  doc.text(footerMessage, (pageWidth - footerMessageWidth) / 2, finalY + 50); // Center the text
-
+    const footerMessage = "Thank You. Come Again!";
+    doc.setFontSize(16); // Increase font size
+    doc.setFont("helvetica", "bold"); // Make it bold
+    const footerMessageWidth = doc.getTextWidth(footerMessage); // Get text width
+    doc.text(footerMessage, (pageWidth - footerMessageWidth) / 2, finalY + 50); // Center the text
 
     // Save the PDF
     doc.save(`Studio_Diya_Invoice_${selectedBooking?.orderId}.pdf`);
@@ -245,17 +247,36 @@ const Bookings = () => {
   const handleFilterByDate = (e) => {
     setSearchKey(null);
     setCustomerDetail(null);
+    setOrderDate(null);
+    setStatus(null);
     const date = e.value ? e.value.toLocaleDateString("en-GB") : null;
-    fetchBookings(null, date, null);
+    fetchBookings(null, date, null, null, null);
   };
 
-  const fetchBookings = async (bookingId, date, customerSearchQuery) => {
+  const handleFilterByOrderDate = (e) => {
+    setSearchKey(null);
+    setCustomerDetail(null);
+    setBookingDate(null);
+    setStatus(null);
+    const date = e.value ? e.value.toLocaleDateString("en-GB") : null;
+    fetchBookings(null, null, null, date, null);
+  };
+
+  const fetchBookings = async (
+    bookingId,
+    date,
+    customerSearchQuery,
+    orderDate,
+    status
+  ) => {
     setLoading(true);
     const data = await SampleData.getData(
       token,
       bookingId,
       date,
-      customerSearchQuery
+      customerSearchQuery,
+      orderDate,
+      status
     );
     setBookings(data.orders);
     setTotalRecords(data.totalRecords);
@@ -281,7 +302,7 @@ const Bookings = () => {
       );
       console.log(response.data);
       setSelectedBooking(response.data.order);
-      fetchBookings(searchKey, bookingDate, customerDetail);
+      fetchBookings(searchKey, bookingDate, customerDetail, orderDate);
       toast.current.show({
         severity: "success",
         summary: "Paid Status Changed!",
@@ -301,7 +322,7 @@ const Bookings = () => {
   };
 
   useEffect(() => {
-    fetchBookings(null, null, null);
+    fetchBookings(null, null, null, null, null);
   }, []);
 
   const onPageChange = (event) => {
@@ -381,13 +402,24 @@ const Bookings = () => {
             <div className="col-12 col-xl-4 col-sm-6">
               <div className="custom-form-group mb-sm-0 mb-3">
                 <label htmlFor="bookingDate" className="custom-form-label">
-                  Filter by booking date :{" "}
+                  Filter by invoice created date :{" "}
                 </label>
                 <div className="form-icon-group">
                   <i className="bi bi-calendar2-fill input-grp-icon"></i>
                   <Calendar
                     id="bookingDate"
-                    onFocus={() => setBookingDate(null)}
+                    onFocus={() => {
+                      setBookingDate(null);
+                      fetchBookings(
+                        searchKey,
+                        null,
+                        customerDetail,
+                        orderDate
+                          ? orderDate.toLocaleDateString("en-GB")
+                          : null,
+                        status
+                      );
+                    }}
                     value={bookingDate}
                     onChange={(e) => {
                       setBookingDate(e.value);
@@ -422,10 +454,11 @@ const Bookings = () => {
                       const bookingId = value ? value : null;
                       setBookingDate(null);
                       setCustomerDetail(null);
-                      fetchBookings(bookingId, null, null);
+                      setOrderDate(null);
+                      setStatus(null);
+                      fetchBookings(bookingId, null, null, null, null);
                     }}
                   />
-                  {/* <Calendar id="dropOffDate" value={bookingDate} onChange={handleFilterByDate} placeholder='dd/mm/yyyy' dateFormat="dd/mm/yy" minDate={today} className='w-100' /> */}
                 </div>
               </div>
             </div>
@@ -450,10 +483,79 @@ const Bookings = () => {
                       const customerDetailQuery = value ? value : null;
                       setSearchKey(null);
                       setBookingDate(null);
-                      fetchBookings(null, null, customerDetailQuery);
+                      setOrderDate(null);
+                      setStatus(null);
+                      fetchBookings(
+                        null,
+                        null,
+                        customerDetailQuery,
+                        null,
+                        null
+                      );
                     }}
                   />
-                  {/* <Calendar id="dropOffDate" value={bookingDate} onChange={handleFilterByDate} placeholder='dd/mm/yyyy' dateFormat="dd/mm/yy" minDate={today} className='w-100' /> */}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-12 col-xl-4 col-sm-6">
+              <div className="custom-form-group mb-sm-0 mb-3">
+                <label htmlFor="bookingDate" className="custom-form-label">
+                  Filter by order date/function date :{" "}
+                </label>
+                <div className="form-icon-group">
+                  <i className="bi bi-calendar2-fill input-grp-icon"></i>
+                  <Calendar
+                    id="orderDate"
+                    onFocus={() => {
+                      setOrderDate(null);
+                      fetchBookings(searchKey, (bookingDate ? bookingDate.toLocaleDateString("en-GB"): null), customerDetail, null, status);
+                    }}
+                    value={orderDate}
+                    onChange={(e) => {
+                      setOrderDate(e.value);
+                      handleFilterByOrderDate(e);
+                    }}
+                    placeholder="dd/mm/yyyy"
+                    dateFormat="dd/mm/yy"
+                    className="w-100"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-xl-4 col-sm-6">
+              <div className="custom-form-group mb-sm-0 mb-3">
+                <label htmlFor="bookingDate" className="custom-form-label">
+                  Filter by invoice status :{" "}
+                </label>
+                <div className="form-icon-group">
+                  <i className="bi bi-info-circle-fill input-grp-icon"></i>
+                  <Dropdown
+                    id="status"
+                    className="w-full w-100 custom-form-dropdown"
+                    placeholder="Select invoice status."
+                    value={status}
+                    name="status"
+                    options={[
+                      "Paid", // Fully paid, no balance due
+                      "Unpaid", // No amount paid yet
+                      "Not Fully Paid", // Partial payment made, but not the total amount
+                      "Overpaid - Balance Due", // Paid more than the total amount, balance needs to be refunded
+                      "Balance Settled", // Overpayment balance has been refunded or adjusted
+                    ]}
+                    optionLabel="status"
+                    onChange={(event) => {
+                      setStatus(event.value);
+                      setBookingDate(null);
+                      setSearchKey(null);
+                      setCustomerDetail(null);
+                      setOrderDate(null);
+                      fetchBookings(null, null, null, null, event.value);
+                    }}
+                    filter
+                    showClear={status ? true : false}
+                  />
                 </div>
               </div>
             </div>
@@ -482,7 +584,7 @@ const Bookings = () => {
                   style={{ width: "20%" }}
                 ></Column>
                 <Column
-                  header="Date & Time"
+                  header="Created Date & Time"
                   body={dateTimeTemplate}
                   style={{ width: "30%" }}
                 ></Column>
@@ -490,6 +592,13 @@ const Bookings = () => {
                   header="Status"
                   body={statusBodyTemplate}
                   style={{ width: "25%" }}
+                ></Column>
+                <Column
+                  header="Order date/function date"
+                  body={(rowData) => {
+                    return `${rowData.orderDate || ''}`;
+                  }}
+                  style={{ width: "30%" }}
                 ></Column>
                 <Column
                   header="Ordered By"
@@ -569,7 +678,9 @@ const Bookings = () => {
                   </div>
                 </div>
               </div>
-              {["Overpaid - Balance Due", "Balance Settled"].includes(selectedBooking.status) && (
+              {["Overpaid - Balance Due", "Balance Settled"].includes(
+                selectedBooking.status
+              ) && (
                 <Button
                   label="Change Paid Status"
                   severity="danger"

@@ -1,11 +1,13 @@
 import api from "./api";
 
 export const SampleData = {
-    getData(token, orderId, date, customerDetail) {
+    getData(token, orderId, date, customerDetail, orderDate, status) {
         return api.get(`/api/common-role/get-all-bookings`, {
             params: {
                 ...(orderId && {orderId}),
                 ...(date && {date}),
+                ...(orderDate && {orderDate}),
+                ...(status && {status}),
                 ...(customerDetail && {customerDetail}),
             },
             headers: {
@@ -17,6 +19,7 @@ export const SampleData = {
             const orders = res.data.data.map(order => ({
                 id: order.orderId,
                 date: new Date(order.createdAt).toLocaleDateString('en-GB'),
+                orderDate: order.orderDate,
                 time: new Date(order.createdAt).toLocaleTimeString(),
                 status: order.status,
                 orderedBy: order?.customerDetails?.name,

@@ -251,6 +251,7 @@ const createOrder = async (req, res) => {
       total: totalAmount,
       paidAmount: paid,
       status,
+      orderDate
     });
 
     // Save the new order
@@ -274,7 +275,7 @@ const editOrder = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { customerDetails, orderDetails, paidAmount } = req.body;
+    const { customerDetails, orderDetails, paidAmount, orderDate } = req.body;
 
     // Fetch the existing order
     const existingOrder = await Order.findById(id);
@@ -283,7 +284,7 @@ const editOrder = async (req, res) => {
     }
 
     // Validate customerDetails and orderDetails
-    if (!customerDetails && !orderDetails && !paidAmount) {
+    if (!customerDetails && !orderDetails && !paidAmount && !orderDate) {
       return res
         .status(400)
         .json({ error: "Please provide detail to be updated!" });
@@ -338,6 +339,7 @@ const editOrder = async (req, res) => {
     existingOrder.total = totalAmount;
     existingOrder.paidAmount = paid;
     existingOrder.status = status;
+    existingOrder.orderDate = orderDate || existingOrder.orderDate;
 
     // Save updated order
     await existingOrder.save();

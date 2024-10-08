@@ -12,6 +12,7 @@ import { useSelector } from "react-redux";
 import { Checkbox } from "primereact/checkbox";
 import { useLocation } from "react-router-dom";
 import { InputTextarea } from "primereact/inputtextarea";
+import { Calendar } from "primereact/calendar";
 
 const Order = () => {
   const toast = useRef(null);
@@ -54,6 +55,7 @@ const Order = () => {
   const [fetchTrigerForTotalAmount, setFetchTrigerForTotalAmount] =
     useState(false);
   const [paidAmount, setPaidAmount] = useState("");
+  const [orderDate, setOrderDate] = useState("");
 
   const handleCreatingOrderTypeDetailInputs = (e) => {
     const { name, value } = e.target;
@@ -187,6 +189,7 @@ const Order = () => {
       setPaidAmount("");
       setStatus(false);
       setTotalAmount(0);
+      setOrderDate('');
     } catch (err) {
       console.log(err);
       toast.current.show({
@@ -317,6 +320,7 @@ const Order = () => {
         return { id: od.id, quantity: od.quantity };
       }),
       paidAmount,
+      orderDate: orderDate.toLocaleDateString("en-GB"),
     };
     handleOrder(orderDetailsForInvoice);
   };
@@ -424,6 +428,17 @@ const Order = () => {
     }
   };
 
+  const reverseDate = (dateString) => {
+    // Split the date string into parts [dd, mm, yyyy]
+    const [day, month, year] = dateString.split("/");
+
+    // Rearrange to yyyy-mm-dd format
+    const formattedDate = `${year}-${month}-${day}`;
+
+    // Create and return a new Date object
+    return new Date(formattedDate);
+  };
+
   useEffect(() => {
     fetchOrderTypes();
   }, []);
@@ -459,11 +474,14 @@ const Order = () => {
           return null; // Return null if foundOrderType is not found
         })
         .filter((uod) => uod !== null); // Filter out null values
-console.log(state?.order?.orderDetails)
+      console.log(state?.order?.orderDetails);
       setOrderDetails(updatingOrderDetails);
       setCustomerDetails(updatingCusDetail);
       setPaidAmount(state?.order?.paidAmount);
       setTotalAmount(state?.order?.total);
+      setOrderDate(
+        state?.order?.orderDate && reverseDate(state?.order?.orderDate)
+      );
     }
   }, [state, orderTypes]);
 
@@ -701,6 +719,33 @@ console.log(state?.order?.orderDetails)
                   keyfilter="num"
                 />
                 {showError && !paidAmount && paidAmount !== 0 && (
+                  <small className="text-danger form-error-msg">
+                    This field is required
+                  </small>
+                )}
+              </div>
+            </div>
+
+            <div className="col-12 col-xl-4 col-sm-6">
+              <div className="custom-form-group mb-sm-4 mb-3">
+                <label
+                  htmlFor="orderDate"
+                  className="custom-form-label form-required"
+                >
+                  Order Date/Function Date:{" "}
+                </label>
+                <Calendar
+                  id="orderDate"
+                  value={orderDate}
+                  onChange={(e) => {
+                    setOrderDate(e.value);
+                  }}
+                  placeholder="dd/mm/yyyy"
+                  dateFormat="dd/mm/yy"
+                  invalid={showError}
+                  className="w-100"
+                />
+                {showError && !orderDate && (
                   <small className="text-danger form-error-msg">
                     This field is required
                   </small>

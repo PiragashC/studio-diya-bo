@@ -5,7 +5,8 @@ const Order = require("../models/order");
 const getAllBookings = async (req, res) => {
   try {
     // Extract query parameters and user information from the request
-    const { page, limit, status, date, orderId, customerDetail } = req.query; // Added customerDetail
+    const { page, limit, status, date, orderId, customerDetail, orderDate } =
+      req.query; // Added customerDetail
     const { id, role } = req.user;
 
     // Initialize userId if the role is "User"
@@ -24,7 +25,13 @@ const getAllBookings = async (req, res) => {
 
     if (status) {
       // Validate status value
-      if (status !== "Paid" && status !== "Unpaid") {
+      if (
+        status !== "Paid" &&
+        status !== "Unpaid" &&
+        status !== "Not Fully Paid" &&
+        status !== "Overpaid - Balance Due" &&
+        status !== "Balance Settled"
+      ) {
         return res.status(400).json({ error: "Invalid Status" });
       }
       query.status = status;
@@ -55,6 +62,10 @@ const getAllBookings = async (req, res) => {
         { "customerDetails.name": { $regex: customerRegex } },
         { "customerDetails.mobileNumber": { $regex: customerRegex } },
       ];
+    }
+
+    if (orderDate) {
+      query.orderDate = orderDate;
     }
 
     // Count total documents matching the query
