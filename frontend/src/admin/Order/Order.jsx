@@ -314,6 +314,17 @@ const Order = () => {
       return;
     }
 
+    if (!orderDate) {
+      setShowError(true);
+      toast.current.show({
+        severity: "error",
+        summary: "Error in Order date/Function date Submission",
+        detail: "Please fill all required fields!",
+        life: 3000,
+      });
+      return;
+    }
+
     const orderDetailsForInvoice = {
       customerDetails,
       orderDetails: orderDetails.map((od) => {
